@@ -3,27 +3,34 @@ on: workflow_dispatch
 jobs:
   build:
     runs-on: windows-latest
-    # Добавляем переменную, чтобы использовать актуальный Node.js
     env:
+      # Убирает предупреждение и принудительно использует Node 24
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
-      - uses: actions/checkout@v4 # Проверьте наличие v5, если ошибка останется
+      - uses: actions/checkout@v4
+      
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      - name: Install MAUI Workload
-        # Устанавливаем только Android, чтобы было быстрее и надежнее
+
+      - name: Install MAUI Android Workload
+        # Устанавливаем ТОЛЬКО Android, чтобы избежать зависаний и ошибок
         run: dotnet workload install maui-android
+
       - name: Restore dependencies
-        run: dotnet restore maui-client/BridgeToFreedom.sln
+        # Очистка перед восстановлением помогает избежать конфликтов
+        run: |
+          dotnet restore maui-client/BridgeToFreedom.sln
+
       - name: Build APK
         run: |
           cd maui-client
-          dotnet publish -f net8.0-android -c Release /p:AndroidKeyStore=false
+          dotnet publish -f net8.0-android -c Release /p:AndroidKeyStore=false /p:ErrorOnDuplicatePublishOutputFiles=false
+          
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: bridge-to-freedom-apk
+          # Путь может отличаться, если структура папок в проекте иная
           path: maui-client/bin/Release/net8.0-android/publish/*.apk
-
