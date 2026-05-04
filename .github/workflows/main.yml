@@ -5,7 +5,6 @@ jobs:
   build:
     runs-on: windows-latest
     env:
-      # Решаем проблему с версией Node.js
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
@@ -20,20 +19,17 @@ jobs:
       - name: Install MAUI Android Workload
         run: dotnet workload install maui-android
 
-      - name: Restore dependencies
-        # Используем поиск всех .sln файлов в папке maui-client
-        run: dotnet restore maui-client/*.sln
-
       - name: Build APK
         run: |
+          # Мы заходим в папку и ищем файл проекта .csproj (он там точно есть)
           cd maui-client
-          # Собираем проект. Параметр /p:AndroidKeyStore=false позволяет собрать без цифровой подписи
-          dotnet publish -f net8.0-android -c Release /p:AndroidKeyStore=false /p:ErrorOnDuplicatePublishOutputFiles=false
-
+          dotnet publish -f net8.0-android -c Release /p:AndroidKeyStore=false
+          
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: bridge-to-freedom-apk
-          # Этот путь стандартный для MAUI, GitHub найдет там готовый APK
-          path: maui-client/bin/Release/net8.0-android/publish/*.apk
+          # Используем маску **, чтобы GitHub сам нашел APK в папках bin или publish
+          path: maui-client/**/publish/*.apk
+
 
